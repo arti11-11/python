@@ -1,0 +1,117 @@
+create table emp_address (
+  2  address_key number primary key,
+  3  city varchar(10),
+  4  state varchar(12),
+  5  country varchar(12));
+
+create table employee (
+  2  emp_id number(10) primary key,
+  3  emp_name varchar(15),
+  4  emp_email varchar(20),
+  5  emp_salary number(10),
+  6  emp_gender varchar(1),
+  7  address_key number references emp_address(address_key));
+
+create table department (
+  2  dept_key number primary key,
+  3  dept_name varchar(10),
+  4  no_of_emp number,
+  5  dept_descrip varchar(20));
+
+create table roles (
+  2  role_key number primary key,
+  3  role_name varchar(10),
+  4  role_descrip varchar(20));
+
+
+create table time (
+  2  time_key number primary key,
+  3  day varchar(10),
+  4  month varchar(10),
+  5  year number(5));
+
+create table xyz_fact (
+  2  emp_id number(10) references employee(emp_id),
+  3  dept_key number references department(dept_key),
+  4  role_key number references roles(role_key),
+  5  time_key number references time(time_key),
+  6  no_of_hours number not null,
+  7  no_of_leaves number);
+
+insert into emp_address values(11,'Mumbai','Maharashtra','India');
+SQL> insert into emp_address values(22,'Nashik','Maharashtra','India');
+SQL> insert into emp_address values(33,'Pune','Maharashtra','India');
+SQL> insert into emp_address values(44,'Mumbai','Maharashtra','India');
+SQL> insert into emp_address values(55,'Surat','Gujarat','India');
+ 
+SQL> insert into employee values(1001,'John','abcd@example.com',80000,'M',11);
+SQL> insert into employee values(2002,'Jeremy','efgh@example.com',85000,'M',22);
+SQL> insert into employee values(3003,'Selena','ijkl@example.com',75000,'F',33);
+SQL> insert into employee values(4004,'Juliet','mnop@example.com',80000,'F',44);
+SQL> insert into employee values(5005,'Sean','qrst@example.com',90000,'M',55);
+
+SQL> insert into department values(1,'IT',1,'Information Tech');
+SQL> insert into department values(2,'SD',2,'Software Dev');
+SQL> insert into department values(3,'HR',1,'Human Resources');
+SQL> insert into department values(4,'Marketing',1,'Marketing and Sales');
+
+SQL> insert into time values(110,23,'August',2022);
+SQL> insert into time values(220,13,'September',2022);
+SQL> insert into time values(330,1,'January',2020);
+SQL> insert into time values(440,15,'January',2020);
+SQL> insert into time values(550,18,'June',2020);
+
+SQL> insert into roles values(191,'Admin','Admin IT');
+SQL> insert into roles values(292,'Manager','SD Manager');
+SQL> insert into roles values(393,'Admin','HR');
+SQL> insert into roles values(494,'Executive','Marketing Expert');
+SQL> insert into roles values(595,'Admin','Admin SD');
+
+SQL> insert into xyz_fact values(1001,1,191,110,7,3);
+SQL> insert into xyz_fact values(2002,2,292,220,8,2);
+SQL> insert into xyz_fact values(3003,3,393,330,6,1);
+SQL> insert into xyz_fact values(4004,4,494,440,6,2);
+SQL> insert into xyz_fact values(5005,2,595,550,8,3);
+
+Write and execute five analytical queries to evaluate business performance.
+1.	Salary count of all admins working in the company.
+SQL> select employee.emp_id, employee.emp_name, employee.emp_salary from employee
+  2  inner join xyz_fact on employee.emp_id = xyz_fact.emp_id
+  3  inner join roles on xyz_fact.role_key = roles.role_key
+  4  where roles.role_name = 'Admin';
+
+SQL> select count(employee.emp_id) as admin_count,
+  2  sum(employee.emp_salary) as total_admin_salary
+  3  from employee
+  4  inner join xyz_fact on employee.emp_id = xyz_fact.emp_id
+  5  inner join roles on xyz_fact.role_key = roles.role_key
+  6  where roles.role_name = 'Admin';
+
+2.	Salary count of all admins from departments of the company.
+SQL> select department.dept_name, count(employee.emp_id) as admin_count, sum(employee.emp_salary) as total_salary
+  2  from department
+  3  left join xyz_fact on department.dept_key = xyz_fact.dept_key
+  4  left join employee on xyz_fact.emp_id = employee.emp_id
+  5  left join roles on xyz_fact.role_key = roles.role_key
+  6  where roles.role_name = 'Admin'
+  7  group by department.dept_name;
+
+3.	Number of leaves taken by manager.
+SQL> select count(xyz_fact.no_of_leaves) as manager_leaves
+  2  from xyz_fact
+  3  inner join roles on xyz_fact.role_key = roles.role_key
+  4  where roles.role_name = 'Manager';
+
+4.	Number of monthly leaves taken by employees in 2022.
+SQL> select time.month as month, sum(xyz_fact.no_of_leaves) as no_of_leaves
+  2  from xyz_fact
+  3  inner join time on xyz_fact.time_key = time.time_key
+  4  where time.year = 2022
+  5  group by time.month;
+
+5.	Number of monthly leaves taken by employees in 2020.
+SQL> select time.month as month, sum(xyz_fact.no_of_leaves) as no_of_leaves
+  2  from xyz_fact
+  3  inner join time on xyz_fact.time_key = time.time_key
+  4  where time.year = 2020
+  5  group by time.month;
